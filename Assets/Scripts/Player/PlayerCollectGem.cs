@@ -12,6 +12,7 @@ public class PlayerCollectGem : Instancable<PlayerCollectGem>
     [SerializeField] private Transform stackParent;
     [SerializeField] private float stackOffset = 0.5f;
     [SerializeField] private float stackRotation = 30;
+    [SerializeField] private GameObject warningPanel;
     
     private bool _isInsideArea = false; 
     private Coroutine _sellingCoroutine;
@@ -41,6 +42,10 @@ public class PlayerCollectGem : Instancable<PlayerCollectGem>
 
     private void OnTriggerEnter(Collider other)
     {
+        if (other == null || other.gameObject == null)
+        {
+            return;
+        }
         Gems gem = other.transform.GetComponent<Gems>();
         if (gem != null && gem.transform.localScale.magnitude>=0.25f)
         {
@@ -48,9 +53,16 @@ public class PlayerCollectGem : Instancable<PlayerCollectGem>
             Destroy(other.gameObject);
             GridManager.instance.GemStack(gem.transform);
         }
+        else if(gem != null && gem.transform.localScale.magnitude>=0.1f && gem.transform.localScale.magnitude<0.25f)
+        {
+            
+            StartCoroutine(WarningGem());
+        }
+
         if (other.CompareTag("SalesArea"))
         {
             _isInsideArea = true;
+            warningPanel.SetActive(false);
             _sellingCoroutine = StartCoroutine(SellGems());
         }
     }
@@ -73,6 +85,13 @@ public class PlayerCollectGem : Instancable<PlayerCollectGem>
         Quaternion stackRotation = Quaternion.Euler(0f, this.stackRotation * GemStack.Count, 0f);
         newGem.transform.localPosition = stackPosition;
         newGem.transform.localRotation = stackRotation;
+    }
+
+    IEnumerator WarningGem()
+    {
+        warningPanel.SetActive(true);
+        yield return new WaitForSeconds(3f);
+        warningPanel.SetActive(false);
     }
     
     private IEnumerator SellGems()
